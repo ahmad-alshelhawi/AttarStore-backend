@@ -15,12 +15,11 @@ namespace AttarStore.Services
         {
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         }
-        public async Task<IUser> GetByUser(string username)
+        public async Task<IUser> GetByUserOrEmail(string input)
         {
             var user = await _dbContext.Users
-                .Where(u => !u.IsDeleted)
-                .Where(u => u.Role != null)
-                .SingleOrDefaultAsync(u => u.Name == username);
+                .Where(u => !u.IsDeleted && u.Role != null)
+                .SingleOrDefaultAsync(u => u.Name == input || u.Email == input);
 
             if (user != null)
             {
@@ -28,12 +27,12 @@ namespace AttarStore.Services
             }
 
             var admin = await _dbContext.Admins
-                .Where(u => !u.IsDeleted)
-                .Where(u => u.Role != null)
-                .SingleOrDefaultAsync(u => u.Name == username);
+                .Where(u => !u.IsDeleted && u.Role != null)
+                .SingleOrDefaultAsync(u => u.Name == input || u.Email == input);
 
             return admin;
         }
+
 
 
         public async Task<string> GetUserRoleByUsername(string username)

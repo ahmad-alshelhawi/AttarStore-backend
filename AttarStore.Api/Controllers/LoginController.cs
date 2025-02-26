@@ -21,14 +21,16 @@ namespace AttarStore.Api.Controllers
             _userRepository = userRepository;
             _tokenService = tokenService;
         }
-
         [HttpPost]
         public async Task<IActionResult> Login([FromBody] LoginModel loginRequest)
         {
-            var user = await _userRepository.GetByUser(loginRequest.Name);
+            var user = await _userRepository.GetByUserOrEmail(loginRequest.Name);
 
+            // If user is not found or password doesn't match
             if (user == null || !BCrypt.Net.BCrypt.Verify(loginRequest.Password, user.Password))
-                return Unauthorized("Invalid username or password");
+            {
+                return Unauthorized(new { message = "Invalid username or password" }); // Sending error message with 401 status
+            }
 
             // Generate tokens and update user
             var tokenResponse = await GenerateAndSaveTokens(user);
@@ -43,8 +45,11 @@ namespace AttarStore.Api.Controllers
                 Roles = roles
             };
 
-            return Ok(response);
+            return Ok(response); // 200 OK
         }
+
+
+
 
         private async Task<object> GenerateAndSaveTokens(IUser user)
         {

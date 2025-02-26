@@ -9,7 +9,7 @@ namespace AttarStore.Services
     {
 
         Task<IUser[]> GetAllUsers();
-        Task<IUser> GetByUser(string username);
+        Task<IUser> GetByUserOrEmail(string input);
         Task<User> GetUserById(int id);
         Task<User> GetUserByIdToUpdate(int id);
         Task DeleteUserAsync(int id);
