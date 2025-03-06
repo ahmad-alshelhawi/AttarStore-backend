@@ -14,6 +14,7 @@ namespace AttarStore.Api.profiler
             this.CreateMap<User, UserView>().ReverseMap();
             this.CreateMap<User, UserMapperUpdate>().ReverseMap();
 
+
         }
     }
 }

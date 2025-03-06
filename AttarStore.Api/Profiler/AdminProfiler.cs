@@ -13,7 +13,7 @@ namespace AttarStore.Api.profiler
             this.CreateMap<Admin, AdminMapperCreate>().ReverseMap();
             this.CreateMap<Admin, AdminMapperView>().ReverseMap();
             this.CreateMap<Admin, AdminView>().ReverseMap();
-            this.CreateMap<Admin, AdminReplyView>().ReverseMap();
+            this.CreateMap<Admin, AdminMapperUpdate>().ReverseMap();
 
         }
     }

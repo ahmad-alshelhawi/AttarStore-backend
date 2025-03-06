@@ -11,7 +11,6 @@ namespace AttarStore.Models
         public string Phone { get; set; }
         public string Role { get; set; }
         public string Address { get; set; } = "";
-        public int DepartmentId { get; set; }
     }
     public class UserMapperUpdate
     {
@@ -20,7 +19,6 @@ namespace AttarStore.Models
         public string Phone { get; set; }
         public string Role { get; set; }
         public string Address { get; set; } = "";
-        public int DepartmentId { get; set; }
         public bool IsDeleted { get; set; } = false;
 
     }
@@ -43,6 +41,23 @@ namespace AttarStore.Models
         public string Name { get; set; }
 
     }
+    public class UserProfileUpdateMapper
+    {
+
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string Address { get; set; }
+
+        public string Phone { get; set; }
+
+
+    }
+    public class ChangePasswordUser
+    {
+        public string CurrentPassword { get; set; }
+        public string NewPassword { get; set; }
+    }
+
 
 
 

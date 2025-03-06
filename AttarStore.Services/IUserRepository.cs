@@ -17,7 +17,7 @@ namespace AttarStore.Services
         Task UpdateUserAsync(IUser user);
         Task<string> GetUserRoleByUsername(string username);
         Task<bool> SaveChangesAsync();
-
+        Task<User> GetByUser(string name);
         Task<bool> EmailExists(string email);
         Task<IUser> GetByRefreshToken(string refreshToken);
 

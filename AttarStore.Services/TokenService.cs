@@ -26,7 +26,7 @@ namespace AttarStore.Services
                 issuer,
                 issuer,
                 claims,
-                expires: DateTime.UtcNow.AddMinutes(30),
+                expires: DateTime.UtcNow.AddDays(1),
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
