@@ -116,34 +116,60 @@ namespace AttarStore.Api.Controllers
             if (existingAdmin == null)
                 return NotFound(new { status = "Admin profile not found" });
 
-            // Check if the new name already exists for another admin or user
-            var adminWithSameName = await _adminRepository.GetByAdmin(adminUpdate.Name);
-            var userWithSameName = await _userRepository.GetByUser(adminUpdate.Name);
+            bool isUpdated = false;
 
-            if ((adminWithSameName != null && adminWithSameName.Id != adminId) || userWithSameName != null)
+            // Check if the Name is being updated and if it already exists
+            if (!string.IsNullOrWhiteSpace(adminUpdate.Name) && adminUpdate.Name != existingAdmin.Name)
             {
-                return Conflict(new { status = "Name already exists in the system." });
+                var adminWithSameName = await _adminRepository.GetByAdmin(adminUpdate.Name);
+                var userWithSameName = await _userRepository.GetByUser(adminUpdate.Name);
+
+                if ((adminWithSameName != null && adminWithSameName.Id != adminId) || userWithSameName != null)
+                {
+                    return Conflict(new { status = "Name already exists in the system." });
+                }
+
+                existingAdmin.Name = adminUpdate.Name;
+                isUpdated = true;
             }
 
-            // Check if the new email already exists for another admin or user
-            var adminWithSameEmail = await _adminRepository.GetByAdminEmail(adminUpdate.Email);
-            var userWithSameEmail = await _userRepository.GetByUserOrEmail(adminUpdate.Email);
-
-            if ((adminWithSameEmail != null && adminWithSameEmail.Id != adminId) || userWithSameEmail != null)
+            // Check if the Email is being updated and if it already exists
+            if (!string.IsNullOrWhiteSpace(adminUpdate.Email) && adminUpdate.Email != existingAdmin.Email)
             {
-                return Conflict(new { status = "Email already exists in the system." });
+                var adminWithSameEmail = await _adminRepository.GetByAdminEmail(adminUpdate.Email);
+                var userWithSameEmail = await _userRepository.GetByUserOrEmail(adminUpdate.Email);
+
+                if ((adminWithSameEmail != null && adminWithSameEmail.Id != adminId) || userWithSameEmail != null)
+                {
+                    return Conflict(new { status = "Email already exists in the system." });
+                }
+
+                existingAdmin.Email = adminUpdate.Email;
+                isUpdated = true;
             }
 
-            // Update profile fields
-            existingAdmin.Name = adminUpdate.Name;
-            existingAdmin.Email = adminUpdate.Email;
-            existingAdmin.Phone = adminUpdate.Phone;
-            existingAdmin.Address = adminUpdate.Address;
+            // Update Phone if it's changed
+            if (!string.IsNullOrWhiteSpace(adminUpdate.Phone) && adminUpdate.Phone != existingAdmin.Phone)
+            {
+                existingAdmin.Phone = adminUpdate.Phone;
+                isUpdated = true;
+            }
+
+            // Update Address if it's changed
+            if (!string.IsNullOrWhiteSpace(adminUpdate.Address) && adminUpdate.Address != existingAdmin.Address)
+            {
+                existingAdmin.Address = adminUpdate.Address;
+                isUpdated = true;
+            }
+
+            // If no updates were made, return a message indicating no changes
+            if (!isUpdated)
+                return Ok(new { status = "No changes have been made." });
 
             // Save the updated profile
             await _adminRepository.UpdateAdminAsync(existingAdmin);
 
-            return Ok(new { status = "Profile updated successfully" });
+            return Ok(new { status = "Profile updated successfully." });
         }
 
 

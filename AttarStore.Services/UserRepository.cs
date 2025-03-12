@@ -125,10 +125,11 @@ namespace AttarStore.Services
             var userToDelete = await _dbContext.Users.FindAsync(id);
             if (userToDelete != null)
             {
-                userToDelete.IsDeleted = true; // Soft delete
+                _dbContext.Users.Remove(userToDelete); // Hard delete
                 await _dbContext.SaveChangesAsync();
             }
         }
+
 
         // ✅ Save Changes to Database
         public async Task<bool> SaveChangesAsync()
@@ -141,6 +142,74 @@ namespace AttarStore.Services
         {
             return await _dbContext.Users.AnyAsync(u => u.Email == email && !u.IsDeleted)
                 || await _dbContext.Admins.AnyAsync(a => a.Email == email && !a.IsDeleted);
+        }
+
+        // NEW: Update admin profile (excluding password unless changed)
+        public async Task<string> UpdateUserProfileAsync(int userId, string name, string phoneNumber, string email)
+        {
+            var user = await GetUserById(userId);
+            if (user == null) return "User not found";
+
+            bool isUpdated = false;
+
+            // Check if Name is being updated and if it already exists
+            if (!string.IsNullOrWhiteSpace(name) && name != user.Name)
+            {
+                bool nameExists = await _dbContext.Admins.AnyAsync(a => a.Id != userId && a.Name == name && !a.IsDeleted) ||
+                                  await _dbContext.Users.AnyAsync(u => u.Name == name && !u.IsDeleted);
+
+                if (nameExists)
+                    return "Name already exists in the system.";
+
+                user.Name = name;
+                isUpdated = true;
+            }
+
+            // Check if Email is being updated and if it already exists
+            if (!string.IsNullOrWhiteSpace(email) && email != user.Email)
+            {
+                bool emailExists = await _dbContext.Admins.AnyAsync(a => a.Id != userId && a.Email == email && !a.IsDeleted) ||
+                                   await _dbContext.Users.AnyAsync(u => u.Email == email && !u.IsDeleted);
+
+                if (emailExists)
+                    return "Email already exists in the system.";
+
+                user.Email = email;
+                isUpdated = true;
+            }
+
+            // Check if Phone is being updated
+            if (!string.IsNullOrWhiteSpace(phoneNumber) && phoneNumber != user.Phone)
+            {
+                user.Phone = phoneNumber;
+                isUpdated = true;
+            }
+
+            // If no updates were made, return a message indicating no changes
+            if (!isUpdated)
+                return "No changes have been made.";
+
+            _dbContext.Entry(user).State = EntityState.Modified;
+            await _dbContext.SaveChangesAsync();
+
+            return "Profile updated successfully.";
+        }
+
+
+
+        // NEW: Update admin password
+        public async Task<bool> UpdateUserPasswordAsync(int userId, string currentPassword, string newPassword)
+        {
+            var user = await GetUserById(userId);
+            if (user == null) return false;
+
+            if (!BCrypt.Net.BCrypt.Verify(currentPassword, user.Password))
+                return false; // Incorrect current password
+
+            user.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            _dbContext.Entry(user).State = EntityState.Modified;
+            await _dbContext.SaveChangesAsync();
+            return true;
         }
     }
 }

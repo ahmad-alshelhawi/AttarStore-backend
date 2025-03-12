@@ -116,31 +116,54 @@ namespace AttarStore.Services
         }
 
         // NEW: Update admin profile (excluding password unless changed)
-        public async Task<bool> UpdateAdminProfileAsync(int adminId, string name, string phoneNumber, string email)
+        public async Task<string> UpdateAdminProfileAsync(int adminId, string name, string phoneNumber, string email)
         {
             var admin = await GetAdminById(adminId);
-            if (admin == null) return false;
+            if (admin == null) return "Admin not found";
 
-            // Check if the name or email already exists for another admin or user
-            var nameExists = await _dbContext.Admins.AnyAsync(a => a.Id != adminId && a.Name == name && !a.IsDeleted) ||
-                             await _dbContext.Users.AnyAsync(u => u.Name == name && !u.IsDeleted);
+            bool isUpdated = false;
 
-            var emailExists = await _dbContext.Admins.AnyAsync(a => a.Id != adminId && a.Email == email && !a.IsDeleted) ||
-                              await _dbContext.Users.AnyAsync(u => u.Email == email && !u.IsDeleted);
+            // Check if Name is being updated and if it already exists
+            if (!string.IsNullOrWhiteSpace(name) && name != admin.Name)
+            {
+                bool nameExists = await _dbContext.Admins.AnyAsync(a => a.Id != adminId && a.Name == name && !a.IsDeleted) ||
+                                  await _dbContext.Users.AnyAsync(u => u.Name == name && !u.IsDeleted);
 
-            if (nameExists)
-                throw new InvalidOperationException("Name already exists in the system.");
+                if (nameExists)
+                    return "Name already exists in the system.";
 
-            if (emailExists)
-                throw new InvalidOperationException("Email already exists in the system.");
+                admin.Name = name;
+                isUpdated = true;
+            }
 
-            admin.Name = name;
-            admin.Phone = phoneNumber;
-            admin.Email = email;
+            // Check if Email is being updated and if it already exists
+            if (!string.IsNullOrWhiteSpace(email) && email != admin.Email)
+            {
+                bool emailExists = await _dbContext.Admins.AnyAsync(a => a.Id != adminId && a.Email == email && !a.IsDeleted) ||
+                                   await _dbContext.Users.AnyAsync(u => u.Email == email && !u.IsDeleted);
+
+                if (emailExists)
+                    return "Email already exists in the system.";
+
+                admin.Email = email;
+                isUpdated = true;
+            }
+
+            // Check if Phone is being updated
+            if (!string.IsNullOrWhiteSpace(phoneNumber) && phoneNumber != admin.Phone)
+            {
+                admin.Phone = phoneNumber;
+                isUpdated = true;
+            }
+
+            // If no updates were made, return a message indicating no changes
+            if (!isUpdated)
+                return "No changes have been made.";
 
             _dbContext.Entry(admin).State = EntityState.Modified;
             await _dbContext.SaveChangesAsync();
-            return true;
+
+            return "Profile updated successfully.";
         }
 
 

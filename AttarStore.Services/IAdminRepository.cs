@@ -13,7 +13,7 @@ namespace AttarStore.Services
         Task<bool> EmailExists(string email);
         Task DeleteAdminAsync(int id);
         Task<Admin> GetByAdminEmail(string email);
-        Task<bool> UpdateAdminProfileAsync(int adminId, string name, string phoneNumber, string email);
+        Task<string> UpdateAdminProfileAsync(int adminId, string name, string phoneNumber, string email);
         Task<bool> UpdateAdminPasswordAsync(int adminId, string currentPassword, string newPassword);
     }
 }

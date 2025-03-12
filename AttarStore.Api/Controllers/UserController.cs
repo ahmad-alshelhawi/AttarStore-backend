@@ -5,6 +5,7 @@ using AttarStore.Services;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 
 namespace AttarStore.Api.Controllers
@@ -46,7 +47,7 @@ namespace AttarStore.Api.Controllers
 
             return Ok(_mapper.Map<AdminMapperView[]>(admins));
         }
-
+        [Authorize("Master , Admin")]
         [HttpPost("AddNewUser")]
         public async Task<IActionResult> CreateUser(UserMapperCreate userCreate)
         {
@@ -176,6 +177,121 @@ namespace AttarStore.Api.Controllers
                 var errorMessage = ex.InnerException?.Message ?? ex.Message;
                 return StatusCode(500, errorMessage);
             }
+        }
+
+
+        // Fetch profile of the currently logged-in admin
+        [HttpGet("GetProfile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(new { status = "Invalid token or missing user identifier" });
+
+            var user = await _userRepository.GetUserById(userId);
+            if (user == null) return NotFound(new { status = "User profile not found" });
+
+            return Ok(_mapper.Map<UserMapperView>(user));
+        }
+
+        // Update profile for the currently logged-in admin
+        [HttpPut("UpdateProfile")]
+        public async Task<IActionResult> UpdateProfile(UserProfileUpdateMapper userUpdate)
+        {
+            // Get the current user's ID from the token
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(new { status = "Invalid token or missing user identifier" });
+
+            // Get the existing user profile
+            var existingUser = await _userRepository.GetUserById(userId);
+            if (existingUser == null)
+                return NotFound(new { status = "User profile not found" });
+
+            bool isUpdated = false;
+
+            // Check if the Name is being updated and if it already exists
+            if (!string.IsNullOrWhiteSpace(userUpdate.Name) && userUpdate.Name != existingUser.Name)
+            {
+                var adminWithSameName = await _adminRepository.GetByAdmin(userUpdate.Name);
+                var userWithSameName = await _userRepository.GetByUser(userUpdate.Name);
+
+                if ((adminWithSameName != null && adminWithSameName.Id != userId) || userWithSameName != null)
+                {
+                    return Conflict(new { status = "Name already exists in the system." });
+                }
+
+                existingUser.Name = userUpdate.Name;
+                isUpdated = true;
+            }
+
+            // Check if the Email is being updated and if it already exists
+            if (!string.IsNullOrWhiteSpace(userUpdate.Email) && userUpdate.Email != existingUser.Email)
+            {
+                var adminWithSameEmail = await _adminRepository.GetByAdminEmail(userUpdate.Email);
+                var userWithSameEmail = await _userRepository.GetByUserOrEmail(userUpdate.Email);
+
+                if ((adminWithSameEmail != null && adminWithSameEmail.Id != userId) || userWithSameEmail != null)
+                {
+                    return Conflict(new { status = "Email already exists in the system." });
+                }
+
+                existingUser.Email = userUpdate.Email;
+                isUpdated = true;
+            }
+
+            // Update Phone if it's changed
+            if (!string.IsNullOrWhiteSpace(userUpdate.Phone) && userUpdate.Phone != existingUser.Phone)
+            {
+                existingUser.Phone = userUpdate.Phone;
+                isUpdated = true;
+            }
+
+            // Update Address if it's changed
+            if (!string.IsNullOrWhiteSpace(userUpdate.Address) && userUpdate.Address != existingUser.Address)
+            {
+                existingUser.Address = userUpdate.Address;
+                isUpdated = true;
+            }
+
+            // If no updates were made, return a message indicating no changes
+            if (!isUpdated)
+                return Ok(new { status = "No changes have been made." });
+
+            // Save the updated profile
+            await _userRepository.UpdateUserAsync(existingUser);
+
+            return Ok(new { status = "Profile updated successfully." });
+        }
+
+
+
+
+        [HttpPost("ChangePassword")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordAdmin changePassword)
+        {
+            // Validate input
+            if (string.IsNullOrEmpty(changePassword.CurrentPassword) || string.IsNullOrEmpty(changePassword.NewPassword))
+                return BadRequest(new { status = "Current password and new password are required" });
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(new { status = "Invalid token or missing user identifier" });
+
+            var user = await _userRepository.GetUserById(userId);
+            if (user == null) return NotFound(new { status = "User not found" });
+
+            // Check if the current password is correct
+            if (!BCrypt.Net.BCrypt.Verify(changePassword.CurrentPassword, user.Password))
+                return BadRequest(new { status = "Current password is incorrect" });
+
+            // Hash the new password
+            user.Password = BCrypt.Net.BCrypt.HashPassword(changePassword.NewPassword);
+
+            // Save the new password
+            await _userRepository.UpdateUserAsync(user);
+
+            return Ok(new { status = "Password changed successfully" });
         }
 
         /* [HttpDelete("DeleteUser/{id:int}")]

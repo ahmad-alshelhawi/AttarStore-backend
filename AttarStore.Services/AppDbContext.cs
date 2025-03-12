@@ -54,8 +54,8 @@ namespace AttarStore.Services
                     Id = 1,
                     Name = "admin",
                     Password = adminPassword,
-                    Email = "admin@gmail.com",
-                    Phone = "096654467",
+                    Email = "ahmad.al.shelhawi@gmail.com",
+                    Phone = "00971501651270",
                     RefreshToken = refreshToken, // Set generated refresh token
                     RefreshTokenExpiryTime = refreshTokenExpiryTime // Set token expiry time
                 }

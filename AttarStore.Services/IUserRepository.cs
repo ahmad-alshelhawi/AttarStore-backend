@@ -20,6 +20,8 @@ namespace AttarStore.Services
         Task<User> GetByUser(string name);
         Task<bool> EmailExists(string email);
         Task<IUser> GetByRefreshToken(string refreshToken);
+        Task<string> UpdateUserProfileAsync(int userId, string name, string phoneNumber, string email);
+        Task<bool> UpdateUserPasswordAsync(int userId, string currentPassword, string newPassword);
 
     }
 
