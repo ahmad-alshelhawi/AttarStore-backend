@@ -47,7 +47,8 @@ namespace AttarStore.Api.Controllers
 
             return Ok(_mapper.Map<AdminMapperView[]>(admins));
         }
-        [Authorize("Master , Admin")]
+
+        [Authorize(Roles = "Master,Admin")]
         [HttpPost("AddNewUser")]
         public async Task<IActionResult> CreateUser(UserMapperCreate userCreate)
         {
@@ -79,35 +80,6 @@ namespace AttarStore.Api.Controllers
             }
         }
 
-        [HttpPost("AddNewAdmin")]
-        public async Task<IActionResult> AddAdmin(AdminMapperCreate adminCreate)
-        {
-
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                // Check if the email already exists
-                if (await _adminRepository.EmailExists(adminCreate.Email))
-                {
-                    return Conflict(new { status = "Email already exists" });
-                }
-
-                var admin = _mapper.Map<Admin>(adminCreate);
-                admin.Password = BCrypt.Net.BCrypt.HashPassword(admin.Password);
-                await _adminRepository.AddAdmin(admin);
-                return CreatedAtAction(nameof(GetUserById), new { id = admin.Id }, _mapper.Map<AdminMapperCreate>(admin));
-            }
-
-            catch (Exception ex)
-            {
-                var errorMessage = ex.InnerException?.Message ?? ex.Message;
-                return StatusCode(500, errorMessage);
-            }
-        }
 
         [HttpGet("GetUserBy/")]
         public async Task<IActionResult> GetUserById([FromQuery] int id)

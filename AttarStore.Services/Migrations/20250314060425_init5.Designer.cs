@@ -4,6 +4,7 @@ using AttarStore.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AttarStore.Services.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250314060425_init5")]
+    partial class init5
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -110,13 +113,13 @@ namespace AttarStore.Services.Migrations
                         {
                             Id = 1,
                             Address = "",
-                            Created_at = new DateTimeOffset(new DateTime(2025, 3, 14, 11, 45, 34, 329, DateTimeKind.Unspecified).AddTicks(3125), new TimeSpan(0, 4, 0, 0, 0)),
+                            Created_at = new DateTimeOffset(new DateTime(2025, 3, 14, 10, 4, 24, 861, DateTimeKind.Unspecified).AddTicks(5542), new TimeSpan(0, 4, 0, 0, 0)),
                             Email = "admin@gmail.com",
                             IsDeleted = false,
                             Name = "admin",
-                            Password = "$2a$11$7q5OdjW/t9ix4JVbj4O/guqOlDwaxCUj2i6v1m52WmBDVnD8G2Lse",
+                            Password = "$2a$11$sevJfjjKhFmTk5IRaIuK6.qCYSWaEb3aPDoOv69QRaw4fJRExFdIG",
                             Phone = "096654467",
-                            RefreshTokenExpiryTime = new DateTime(2025, 3, 14, 7, 46, 34, 329, DateTimeKind.Utc).AddTicks(2801),
+                            RefreshTokenExpiryTime = new DateTime(2025, 3, 14, 6, 5, 24, 861, DateTimeKind.Utc).AddTicks(4921),
                             Role = "Master"
                         });
                 });

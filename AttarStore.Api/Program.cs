@@ -1,4 +1,5 @@
 using AttarStore.Api.Utils;
+using AttarStore.Repositories;
 using AttarStore.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -45,10 +46,17 @@ builder.Services.AddDbContextPool<AppDbContext>(e =>
 });
 
 builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
+builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IActionLogRepository, ActionLogRepository>();
+builder.Services.AddScoped<IManufacturerRepository, ManufacturerRepository>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
+builder.Services.AddScoped<IBillingRepository, BillingRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<ICartRepository, CartRepository>();
 builder.Services.AddScoped<TokenService>();
 
 

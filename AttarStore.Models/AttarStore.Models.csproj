@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\AttarStore.Entities\AttarStore.Entities.csproj" />
+  </ItemGroup>
+
 </Project>

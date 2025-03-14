@@ -10,8 +10,7 @@ namespace AttarStore.Entities
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public int ContentTypeId { get; set; }
-        public List<PermissionUser> Users { get; set; }
+        public List<PermissionUser> PermissionUsers { get; set; }
 
     }
 }

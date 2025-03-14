@@ -19,8 +19,12 @@ namespace AttarStore.Entities
 
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
-
-
-
+        public List<PermissionUser> PermissionUsers { get; set; }
+        public List<Order> Orders { get; set; }
+        //public List<RefreshToken> RefreshTokens { get; set; }
+        public List<ActionLog> ActionLogs { get; set; }
+        public Cart Cart { get; set; }
     }
+
+
 }

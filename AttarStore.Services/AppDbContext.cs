@@ -14,9 +14,18 @@ namespace AttarStore.Services
         public DbSet<Clients> Clients { get; set; }
         public DbSet<PermissionUser> PermissionUser { get; set; }
         public DbSet<Permission> Permissions { get; set; }
-        //public DbSet<ContentType> ContentType { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
-
+        public DbSet<Category> Categories { get; set; }
+        public DbSet<ActionLog> ActionLogs { get; set; }
+        public DbSet<Manufacturer> Manufacturers { get; set; }
+        public DbSet<Product> Products { get; set; }
+        public DbSet<Inventory> Inventories { get; set; }
+        public DbSet<InventoryProduct> InventoryProducts { get; set; }
+        public DbSet<Billing> Billings { get; set; }
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<Cart> Carts { get; set; }
+        public DbSet<CartItem> CartItems { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -54,8 +63,8 @@ namespace AttarStore.Services
                     Id = 1,
                     Name = "admin",
                     Password = adminPassword,
-                    Email = "ahmad.al.shelhawi@gmail.com",
-                    Phone = "00971501651270",
+                    Email = "admin@gmail.com",
+                    Phone = "096654467",
                     RefreshToken = refreshToken, // Set generated refresh token
                     RefreshTokenExpiryTime = refreshTokenExpiryTime // Set token expiry time
                 }
