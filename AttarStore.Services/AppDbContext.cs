@@ -65,8 +65,11 @@ namespace AttarStore.Services
                     Password = adminPassword,
                     Email = "admin@gmail.com",
                     Phone = "096654467",
+                    ResetToken = null,  // ✅ Set to null explicitly
+                    ResetTokenExpiry = null, // ✅ Set to null explicitly
                     RefreshToken = refreshToken, // Set generated refresh token
-                    RefreshTokenExpiryTime = refreshTokenExpiryTime // Set token expiry time
+                    RefreshTokenExpiryTime = refreshTokenExpiryTime, // Set token expiry time
+                    IsDeleted = false
                 }
 
             );

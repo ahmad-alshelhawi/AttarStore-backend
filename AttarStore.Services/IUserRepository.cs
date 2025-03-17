@@ -22,6 +22,10 @@ namespace AttarStore.Services
         Task<IUser> GetByRefreshToken(string refreshToken);
         Task<string> UpdateUserProfileAsync(int userId, string name, string phoneNumber, string email);
         Task<bool> UpdateUserPasswordAsync(int userId, string currentPassword, string newPassword);
+        Task<string> GeneratePasswordResetTokenAsync(string email);
+        Task<bool> ResetPasswordAsync(string email, string token, string newPassword);
+        Task<User> GetByUserEmail(string email);
+
 
     }
 

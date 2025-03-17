@@ -17,6 +17,8 @@ namespace AttarStore.Entities.submodels
         public string Role { get; set; }
 
         public string? RefreshToken { get; set; }
+        public string? ResetToken { get; set; }
+        public DateTime? ResetTokenExpiry { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
 
 

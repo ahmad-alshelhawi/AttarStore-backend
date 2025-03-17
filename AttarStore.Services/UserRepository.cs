@@ -3,6 +3,7 @@ using AttarStore.Entities.submodels;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 
 namespace AttarStore.Services
@@ -207,6 +208,39 @@ namespace AttarStore.Services
                 return false; // Incorrect current password
 
             user.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            _dbContext.Entry(user).State = EntityState.Modified;
+            await _dbContext.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<string> GeneratePasswordResetTokenAsync(string email)
+        {
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted);
+            if (user == null) return null;
+
+            string token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+            user.ResetToken = token;
+            user.ResetTokenExpiry = DateTime.UtcNow.AddHours(1); // Token valid for 1 hour
+
+            _dbContext.Entry(user).State = EntityState.Modified;
+            await _dbContext.SaveChangesAsync();
+
+            return token;
+        }
+
+        // Reset Password Using Token
+        public async Task<bool> ResetPasswordAsync(string email, string token, string newPassword)
+        {
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted);
+            if (user == null || user.ResetToken != token || user.ResetTokenExpiry < DateTime.UtcNow)
+            {
+                return false; // Invalid token or expired
+            }
+
+            user.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            user.ResetToken = null;
+            user.ResetTokenExpiry = null;
+
             _dbContext.Entry(user).State = EntityState.Modified;
             await _dbContext.SaveChangesAsync();
             return true;

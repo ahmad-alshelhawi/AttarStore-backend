@@ -91,6 +91,12 @@ namespace AttarStore.Services.Migrations
                     b.Property<DateTime?>("RefreshTokenExpiryTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("ResetToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ResetTokenExpiry")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -110,13 +116,13 @@ namespace AttarStore.Services.Migrations
                         {
                             Id = 1,
                             Address = "",
-                            Created_at = new DateTimeOffset(new DateTime(2025, 3, 14, 11, 45, 34, 329, DateTimeKind.Unspecified).AddTicks(3125), new TimeSpan(0, 4, 0, 0, 0)),
+                            Created_at = new DateTimeOffset(new DateTime(2025, 3, 17, 12, 10, 8, 120, DateTimeKind.Unspecified).AddTicks(20), new TimeSpan(0, 4, 0, 0, 0)),
                             Email = "admin@gmail.com",
                             IsDeleted = false,
                             Name = "admin",
-                            Password = "$2a$11$7q5OdjW/t9ix4JVbj4O/guqOlDwaxCUj2i6v1m52WmBDVnD8G2Lse",
+                            Password = "$2a$11$m7iiPtGakB/q8J.VvC7VuOH9gSChRJHlgoB/NiKRp9YnusI6QvzK6",
                             Phone = "096654467",
-                            RefreshTokenExpiryTime = new DateTime(2025, 3, 14, 7, 46, 34, 329, DateTimeKind.Utc).AddTicks(2801),
+                            RefreshTokenExpiryTime = new DateTime(2025, 3, 17, 8, 11, 8, 119, DateTimeKind.Utc).AddTicks(9547),
                             Role = "Master"
                         });
                 });
@@ -263,6 +269,12 @@ namespace AttarStore.Services.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("RefreshTokenExpiryTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ResetToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ResetTokenExpiry")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Role")
@@ -558,6 +570,12 @@ namespace AttarStore.Services.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("RefreshTokenExpiryTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ResetToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ResetTokenExpiry")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Role")

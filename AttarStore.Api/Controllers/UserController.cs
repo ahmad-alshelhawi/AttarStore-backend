@@ -35,18 +35,6 @@ namespace AttarStore.Api.Controllers
             return Ok(_mapper.Map<UserMapperView[]>(users));
         }
 
-        [HttpGet("GetAllAdmins")]
-        public async Task<ActionResult<AdminMapperView[]>> GetAdmins()
-        {
-            var admins = await _adminRepository.GetAllAdmins();
-
-            if (admins == null || !admins.Any())
-            {
-                return NotFound("No admins found.");
-            }
-
-            return Ok(_mapper.Map<AdminMapperView[]>(admins));
-        }
 
         [Authorize(Roles = "Master,Admin")]
         [HttpPost("AddNewUser")]

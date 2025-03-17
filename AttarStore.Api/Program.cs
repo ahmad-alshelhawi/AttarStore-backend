@@ -2,6 +2,7 @@ using AttarStore.Api.Utils;
 using AttarStore.Repositories;
 using AttarStore.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
@@ -57,6 +58,8 @@ builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
 builder.Services.AddScoped<IBillingRepository, BillingRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<ICartRepository, CartRepository>();
+builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<TokenService>();
 
 

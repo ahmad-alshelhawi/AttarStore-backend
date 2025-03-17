@@ -1,7 +1,9 @@
-﻿using AttarStore.Entities;
+﻿using AttarStore.Api.Utils;
+using AttarStore.Entities;
 using AttarStore.Entities.submodels;
 using AttarStore.Models;
 using AttarStore.Services;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Data;
 using System.Security.Claims;
@@ -15,11 +17,13 @@ namespace AttarStore.Api.Controllers
     {
         private readonly IUserRepository _userRepository;
         private readonly TokenService _tokenService;
+        private readonly IEmailSender _emailSender;
 
-        public LogInController(IUserRepository userRepository, TokenService tokenService)
+        public LogInController(IUserRepository userRepository, TokenService tokenService, IEmailSender emailSender)
         {
             _userRepository = userRepository;
             _tokenService = tokenService;
+            _emailSender = emailSender;
         }
         [HttpPost]
         public async Task<IActionResult> Login([FromBody] LoginModel loginRequest)
@@ -125,5 +129,51 @@ namespace AttarStore.Api.Controllers
 
             return Ok(response);
         }
+
+
+        [HttpPost("request-password-reset")]
+        public async Task<IActionResult> RequestPasswordReset([FromBody] PasswordResetRequestDto model)
+        {
+            // Check if the email exists in the system
+            var user = await _userRepository.GetByUserEmail(model.Email);
+            if (user == null)
+                return BadRequest(new { message = "Invalid email address." }); // Return JSON with message.
+
+            // Generate a password reset token
+            var token = await _userRepository.GeneratePasswordResetTokenAsync(model.Email);
+            if (string.IsNullOrEmpty(token))
+                return BadRequest(new { message = "Error generating reset token." }); // Return JSON with message.
+
+            // Generate the reset link, including the token and email
+            var resetLink = $"{AppConstants.PasswordResetBaseUrl}?token={token}&email={model.Email}";
+
+
+
+            // Send the reset link via email
+            try
+            {
+                await _emailSender.SendEmailAsync(model.Email, "Password Reset", $"Click here to reset your password: {resetLink}");
+            }
+            catch (Exception ex)
+            {
+                // Log the error here and return a generic error message
+                return StatusCode(500, new { message = "An error occurred while sending the email." }); // Return JSON with message.
+            }
+
+            return Ok(new { message = "Password reset link sent." }); // Return JSON with success message.
+        }
+
+
+        // Reset Password
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto model)
+        {
+            bool isReset = await _userRepository.ResetPasswordAsync(model.Email, model.Token, model.NewPassword);
+            if (!isReset)
+                return BadRequest(new { message = "Invalid or expired token" }); // Return JSON with message.
+
+            return Ok(new { message = "Password reset successful." }); // Return JSON with success message.
+        }
+
     }
 }

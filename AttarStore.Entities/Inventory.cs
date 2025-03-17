@@ -8,7 +8,7 @@ namespace AttarStore.Entities
         public int Id { get; set; }
 
         [Required]
-        public string Location { get; set; }  // Example: Warehouse location
+        public string? Location { get; set; }  // Example: Warehouse location
 
         public bool IsDeleted { get; set; }
 
