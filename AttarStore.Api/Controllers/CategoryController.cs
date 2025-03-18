@@ -27,7 +27,7 @@ namespace AttarStore.Controllers
         {
             var category = await _categoryRepository.GetAllCategories();
             if (category == null || !category.Any())
-                return NotFound("No admins found.");
+                return NotFound("No catigories found.");
 
             return Ok(_mapper.Map<CategoryMapper[]>(category));
         }
