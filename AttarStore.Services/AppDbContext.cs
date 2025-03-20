@@ -11,7 +11,7 @@ namespace AttarStore.Services
 
         public DbSet<Admin> Admins { get; set; }
         public DbSet<User> Users { get; set; }
-        public DbSet<Clients> Clients { get; set; }
+        public DbSet<Client> Clients { get; set; }
         public DbSet<PermissionUser> PermissionUser { get; set; }
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }

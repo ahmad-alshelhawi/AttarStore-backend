@@ -15,7 +15,7 @@ namespace AttarStore.Entities
 
         public int? ParentId { get; set; }
 
-        public bool IsDeleted { get; set; }
+        public string? ImageUrl { get; set; } // URL of the category image
 
         // Navigation property for self-referencing parent category
         public Category? Parent { get; set; }

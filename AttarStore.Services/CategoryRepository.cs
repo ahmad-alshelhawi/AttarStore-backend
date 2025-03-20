@@ -24,13 +24,12 @@ namespace AttarStore.Repositories
                                    .ToArrayAsync();
         }
 
-        public async Task<Category> GetByCategoryIdAsync(int id)
+        public async Task<Category?> GetByCategoryIdAsync(int id)
         {
             return await _dbContext.Categories
-                                   .Where(c => c.Id == id && !c.IsDeleted)
-                                   //.Include(c => c.Products)
-                                   //.Include(c => c.Categories)
-                                   .FirstOrDefaultAsync();
+                                   .Include(c => c.Products)
+                                   .Include(c => c.Categories)
+                                   .FirstOrDefaultAsync(c => c.Id == id);
         }
 
         public async Task AddCategory(Category category)
@@ -41,8 +40,21 @@ namespace AttarStore.Repositories
 
         public async Task UpdateCategory(Category category)
         {
-            _dbContext.Categories.Update(category);
-            await _dbContext.SaveChangesAsync();
+            var existingCategory = await _dbContext.Categories.FindAsync(category.Id);
+            if (existingCategory != null)
+            {
+                existingCategory.Name = category.Name;
+                existingCategory.Description = category.Description;
+                existingCategory.ParentId = category.ParentId;
+
+                // Only update the ImageUrl if a new image is uploaded
+                if (!string.IsNullOrEmpty(category.ImageUrl))
+                {
+                    existingCategory.ImageUrl = category.ImageUrl;
+                }
+
+                await _dbContext.SaveChangesAsync();
+            }
         }
 
         public async Task DeleteCategory(int id)
@@ -50,9 +62,16 @@ namespace AttarStore.Repositories
             var category = await _dbContext.Categories.FindAsync(id);
             if (category != null)
             {
-                category.IsDeleted = true;
+                _dbContext.Categories.Remove(category);
                 await _dbContext.SaveChangesAsync();
             }
+        }
+
+        public async Task<Category[]> GetByParentIdAsync(int? parentId)
+        {
+            return await _dbContext.Categories
+                                   .Where(c => c.ParentId == parentId)
+                                   .ToArrayAsync();
         }
     }
 }

@@ -3,7 +3,7 @@ using AttarStore.Entities.submodels;
 
 namespace AttarStore.Entities
 {
-    public class Clients : IUser
+    public class Client : IUser
     {
         public int Id { get; set; }
         public string Name { get; set; }

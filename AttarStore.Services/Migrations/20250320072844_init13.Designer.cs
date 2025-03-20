@@ -4,6 +4,7 @@ using AttarStore.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AttarStore.Services.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250320072844_init13")]
+    partial class init13
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -116,13 +119,13 @@ namespace AttarStore.Services.Migrations
                         {
                             Id = 1,
                             Address = "",
-                            Created_at = new DateTimeOffset(new DateTime(2025, 3, 20, 13, 37, 5, 782, DateTimeKind.Unspecified).AddTicks(4974), new TimeSpan(0, 4, 0, 0, 0)),
+                            Created_at = new DateTimeOffset(new DateTime(2025, 3, 20, 11, 28, 44, 178, DateTimeKind.Unspecified).AddTicks(4863), new TimeSpan(0, 4, 0, 0, 0)),
                             Email = "admin@gmail.com",
                             IsDeleted = false,
                             Name = "admin",
-                            Password = "$2a$11$1C/KF5CIUt/1NCpRc0wJKuV2.6LSduix3XHUdejUEJH6BSP6MrDeC",
+                            Password = "$2a$11$HiRsMZFienWzAZDvbbBxXeRjG8Gq1DVhnz4LAjyFgvUoYQqUATXMq",
                             Phone = "096654467",
-                            RefreshTokenExpiryTime = new DateTime(2025, 3, 20, 9, 38, 5, 782, DateTimeKind.Utc).AddTicks(4439),
+                            RefreshTokenExpiryTime = new DateTime(2025, 3, 20, 7, 29, 44, 178, DateTimeKind.Utc).AddTicks(4609),
                             Role = "Master"
                         });
                 });
@@ -223,8 +226,8 @@ namespace AttarStore.Services.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("ImageUrl")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -241,7 +244,7 @@ namespace AttarStore.Services.Migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("AttarStore.Entities.Client", b =>
+            modelBuilder.Entity("AttarStore.Entities.Clients", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()

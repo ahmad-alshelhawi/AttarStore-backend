@@ -1,38 +1,43 @@
 ﻿using AttarStore.Entities;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AttarStore.Models
 {
-
+    // Mapper used for displaying categories with the list of products
     public class CategoryMapper
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public string Description { get; set; }
-        public List<ProductCategoryMapperView> Products { get; set; }
+        public string? Description { get; set; }
+        public string? ImageUrl { get; set; }  // Image URL
+        //public int? ParentId { get; set; } // Parent ID for subcategories
+        public List<ProductCategoryMapperView> Products { get; set; } = new List<ProductCategoryMapperView>();
     }
 
+    // Mapper used for creating categories
     public class CategoryCreateMapper
     {
-        public int Id { get; set; }
         public string Name { get; set; }
-        public string Description { get; set; }
+        public string? Description { get; set; }
+        //public int? ParentId { get; set; }  // Parent ID for creating nested categories
     }
+
+    // Mapper used for updating categories
     public class CategoryUpdateMapper
     {
         public string Name { get; set; }
-        public string Description { get; set; }
-
+        public string? Description { get; set; }
+        //public int? ParentId { get; set; }  // Parent ID for updating nested categories
     }
+
+    // A simplified view of the category for displaying purposes
     public class CategoryMapperView
     {
         public string Name { get; set; }
+        public string? ImageUrl { get; set; } // Optionally include Image URL in the view
     }
-}
 
+    // DTO used to display products within a category
+
+}
