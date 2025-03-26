@@ -59,9 +59,9 @@ namespace AttarStore.Controllers
             }
 
             await _productRepository.AddProduct(product);
-            var productDto = _mapper.Map<ProductMapper>(product);
+            var productDto = _mapper.Map<ProductCreateMapper>(product);
 
-            return CreatedAtAction(nameof(GetProductById), new { id = productDto.Id }, productDto);
+            return CreatedAtAction(nameof(GetProductById), new { id = product.Id }, productDto);
         }
 
         [HttpPut("UpdateProduct/{id}")]
