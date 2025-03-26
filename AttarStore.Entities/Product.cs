@@ -28,7 +28,7 @@ namespace AttarStore.Entities
 
         public int ManufacturerId { get; set; }
         public Manufacturer Manufacturer { get; set; }
-        public List<InventoryProduct> InventoryProducts { get; set; }  // Navigation property to InventoryProduct
+        public List<InventoryProduct> InventoryProducts { get; set; }
         public List<CartItem> CartItems { get; set; }
 
     }
