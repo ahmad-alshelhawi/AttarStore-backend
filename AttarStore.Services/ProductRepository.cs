@@ -19,7 +19,6 @@ namespace AttarStore.Repositories
         public async Task<Product[]> GetAllProducts()
         {
             return await _dbContext.Products
-                                   .Where(p => !p.IsDeleted)
                                    .Include(p => p.Category)
                                    .Include(p => p.Manufacturer)
                                    .ToArrayAsync();
@@ -28,7 +27,7 @@ namespace AttarStore.Repositories
         public async Task<Product> GetProductByIdAsync(int id)
         {
             return await _dbContext.Products
-                                   .Where(p => p.Id == id && !p.IsDeleted)
+                                   .Where(p => p.Id == id)
                                    .Include(p => p.Category)
                                    .Include(p => p.Manufacturer)
                                    .FirstOrDefaultAsync();
@@ -51,7 +50,7 @@ namespace AttarStore.Repositories
             var product = await _dbContext.Products.FindAsync(id);
             if (product != null)
             {
-                product.IsDeleted = true;
+                _dbContext.Products.Remove(product);
                 await _dbContext.SaveChangesAsync();
             }
         }

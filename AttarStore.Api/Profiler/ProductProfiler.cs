@@ -12,6 +12,7 @@ namespace AttarStore.Api.Profiler
             this.CreateMap<Product, ProductCreateMapper>().ReverseMap();
             this.CreateMap<Product, ProductUpdateMapper>().ReverseMap();
             this.CreateMap<Product, ProductCategoryMapperView>().ReverseMap();
+            this.CreateMap<Product, ProductimageMapperView>().ReverseMap();
 
         }
     }

@@ -12,6 +12,8 @@ namespace AttarStore.Models
         public string Name { get; set; }
         public string Description { get; set; }
         public decimal Price { get; set; }
+        public string? ImageUrl { get; set; } // Optionally include Image URL in the view
+
         public CategoryMapperView Category { get; set; }
 
         public ManufacturerCategoryMapperView Manufacturer { get; set; }
@@ -43,4 +45,10 @@ namespace AttarStore.Models
         public string Description { get; set; }
         public decimal Price { get; set; }
     }
+}
+
+public class ProductimageMapperView
+{
+    public string Name { get; set; }
+    public string? ImageUrl { get; set; } // Optionally include Image URL in the view
 }

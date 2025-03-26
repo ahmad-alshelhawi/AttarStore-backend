@@ -116,13 +116,13 @@ namespace AttarStore.Services.Migrations
                         {
                             Id = 1,
                             Address = "",
-                            Created_at = new DateTimeOffset(new DateTime(2025, 3, 20, 13, 37, 5, 782, DateTimeKind.Unspecified).AddTicks(4974), new TimeSpan(0, 4, 0, 0, 0)),
+                            Created_at = new DateTimeOffset(new DateTime(2025, 3, 26, 11, 32, 56, 674, DateTimeKind.Unspecified).AddTicks(4793), new TimeSpan(0, 4, 0, 0, 0)),
                             Email = "admin@gmail.com",
                             IsDeleted = false,
                             Name = "admin",
-                            Password = "$2a$11$1C/KF5CIUt/1NCpRc0wJKuV2.6LSduix3XHUdejUEJH6BSP6MrDeC",
+                            Password = "$2a$11$kKfhOBrvKFfztmHf8ZyEHOXTPGrqwr4O0k5kYa1ELerH3yJqImezG",
                             Phone = "096654467",
-                            RefreshTokenExpiryTime = new DateTime(2025, 3, 20, 9, 38, 5, 782, DateTimeKind.Utc).AddTicks(4439),
+                            RefreshTokenExpiryTime = new DateTime(2025, 3, 26, 7, 33, 56, 674, DateTimeKind.Utc).AddTicks(4533),
                             Role = "Master"
                         });
                 });
@@ -479,8 +479,8 @@ namespace AttarStore.Services.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ManufacturerId")
                         .HasColumnType("int");

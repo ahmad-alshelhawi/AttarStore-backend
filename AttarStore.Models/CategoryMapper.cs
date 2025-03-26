@@ -35,7 +35,6 @@ namespace AttarStore.Models
     public class CategoryMapperView
     {
         public string Name { get; set; }
-        public string? ImageUrl { get; set; } // Optionally include Image URL in the view
     }
 
     // DTO used to display products within a category

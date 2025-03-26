@@ -18,7 +18,7 @@ namespace AttarStore.Entities
         [Required(ErrorMessage = "Price is required")]
         public decimal Price { get; set; }
 
-        public bool IsDeleted { get; set; }
+        public string? ImageUrl { get; set; } // URL of the category image
 
         // Foreign key for Category
         public int CategoryId { get; set; }
