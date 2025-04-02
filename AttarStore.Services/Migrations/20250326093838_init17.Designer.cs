@@ -4,6 +4,7 @@ using AttarStore.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AttarStore.Services.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250326093838_init17")]
+    partial class init17
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -116,13 +119,13 @@ namespace AttarStore.Services.Migrations
                         {
                             Id = 1,
                             Address = "",
-                            Created_at = new DateTimeOffset(new DateTime(2025, 4, 2, 22, 31, 34, 904, DateTimeKind.Unspecified).AddTicks(7626), new TimeSpan(0, 4, 0, 0, 0)),
+                            Created_at = new DateTimeOffset(new DateTime(2025, 3, 26, 13, 38, 38, 21, DateTimeKind.Unspecified).AddTicks(3695), new TimeSpan(0, 4, 0, 0, 0)),
                             Email = "admin@gmail.com",
                             IsDeleted = false,
                             Name = "admin",
-                            Password = "$2a$11$jAqjT2aEpaXrVRPME/4nzuzVW3kROrADmQT6R0qbwkeSPHGSnyNS.",
+                            Password = "$2a$11$41DxJZMGFLXeQrMK4Arq2OzlPitiwqs7KAqJ84lXQQJp57t.l0a8u",
                             Phone = "096654467",
-                            RefreshTokenExpiryTime = new DateTime(2025, 4, 2, 18, 32, 34, 904, DateTimeKind.Utc).AddTicks(7228),
+                            RefreshTokenExpiryTime = new DateTime(2025, 3, 26, 9, 39, 38, 21, DateTimeKind.Utc).AddTicks(3085),
                             Role = "Master"
                         });
                 });
@@ -491,9 +494,6 @@ namespace AttarStore.Services.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Quantity")
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");

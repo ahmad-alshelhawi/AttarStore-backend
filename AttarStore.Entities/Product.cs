@@ -17,6 +17,7 @@ namespace AttarStore.Entities
 
         [Required(ErrorMessage = "Price is required")]
         public decimal Price { get; set; }
+        public decimal Quantity { get; set; }
 
         public string? ImageUrl { get; set; } // URL of the category image
 

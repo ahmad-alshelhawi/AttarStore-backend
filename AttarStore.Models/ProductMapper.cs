@@ -12,6 +12,7 @@ namespace AttarStore.Models
         public string Name { get; set; }
         public string Description { get; set; }
         public decimal Price { get; set; }
+        public decimal Quantity { get; set; }
         public string? ImageUrl { get; set; } // Optionally include Image URL in the view
 
         public CategoryMapperView Category { get; set; }
@@ -25,6 +26,7 @@ namespace AttarStore.Models
         public string Name { get; set; }
         public string Description { get; set; }
         public decimal Price { get; set; }
+        public decimal Quantity { get; set; }
         public int CategoryId { get; set; }
         public int ManufacturerId { get; set; }
     }
@@ -34,6 +36,7 @@ namespace AttarStore.Models
         public string Name { get; set; }
         public string Description { get; set; }
         public decimal Price { get; set; }
+        public decimal Quantity { get; set; }
         public int CategoryId { get; set; }
         public int ManufacturerId { get; set; }
     }
@@ -43,6 +46,8 @@ namespace AttarStore.Models
         public string Name { get; set; }
         public string Description { get; set; }
         public decimal Price { get; set; }
+        public decimal Quantity { get; set; }
+
     }
 }
 
