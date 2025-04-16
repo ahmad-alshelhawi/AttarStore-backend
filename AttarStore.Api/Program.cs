@@ -13,8 +13,13 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var jwt_key = builder.Configuration.GetSection("JWT:key").Get<string>();
+var jwt_key = builder.Configuration.GetSection("JWT:Key").Get<string>();
 var jwt_issuer = builder.Configuration.GetSection("JWT:Issuer").Get<string>();
+var jwt_audience = builder.Configuration.GetSection("JWT:Audience").Get<string>();
+
+builder.Configuration
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
 builder.Services.AddCors(options =>
 {
@@ -24,19 +29,25 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader());
 });
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(jwtOptions =>
-    jwtOptions.TokenValidationParameters = new TokenValidationParameters
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    var config = builder.Configuration.GetSection("JWT");
+    options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidAudiences = new[] { jwt_issuer },
-        ValidIssuers = new[] { jwt_issuer },
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt_key)),
-        ClockSkew = TimeSpan.Zero // Eliminates extra time for token expiration
-    });
+        ValidIssuer = jwt_issuer,
+        ValidAudience = jwt_audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt_key))
+    };
+});
 
 // Register TokenService for handling token generation and refreshing
 
@@ -49,6 +60,7 @@ builder.Services.AddDbContextPool<AppDbContext>(e =>
 builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IClientRepository, ClientRepository>();
 builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IActionLogRepository, ActionLogRepository>();
@@ -59,7 +71,6 @@ builder.Services.AddScoped<IBillingRepository, BillingRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<ICartRepository, CartRepository>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
-builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<TokenService>();
 
 

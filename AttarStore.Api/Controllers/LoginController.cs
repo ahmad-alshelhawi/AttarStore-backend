@@ -3,11 +3,12 @@ using AttarStore.Entities;
 using AttarStore.Entities.submodels;
 using AttarStore.Models;
 using AttarStore.Services;
+using Azure.Core;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
-using System.Data;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Concurrent;
 using System.Security.Claims;
-
 
 namespace AttarStore.Api.Controllers
 {
@@ -15,67 +16,102 @@ namespace AttarStore.Api.Controllers
     [Route("api/[controller]")]
     public class LogInController : ControllerBase
     {
+        private readonly IClientRepository _clientRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IAdminRepository _adminRepository;
+        private readonly AppDbContext _dbcontext;
         private readonly TokenService _tokenService;
         private readonly IEmailSender _emailSender;
 
-        public LogInController(IUserRepository userRepository, TokenService tokenService, IEmailSender emailSender)
+        // In-memory store for refresh tokens (replace with DB for production)
+        private static readonly ConcurrentDictionary<string, string> RefreshTokens = new();
+
+        public LogInController(IUserRepository userRepository, TokenService tokenService, IEmailSender emailSender, AppDbContext dbcontext, IAdminRepository adminRepository, IClientRepository clientRepository)
         {
             _userRepository = userRepository;
+            _adminRepository = adminRepository;
             _tokenService = tokenService;
             _emailSender = emailSender;
+            _dbcontext = dbcontext;
+            _adminRepository = adminRepository;
+            _clientRepository = clientRepository;
         }
+
+
         [HttpPost]
         public async Task<IActionResult> Login([FromBody] LoginModel loginRequest)
         {
-            var user = await _userRepository.GetByUserOrEmail(loginRequest.Name);
-
-            // If user is not found or password doesn't match
-            if (user == null || !BCrypt.Net.BCrypt.Verify(loginRequest.Password, user.Password))
+            // Check Admin
+            var admin = await _adminRepository.GetByUserOrEmail(loginRequest.Name);
+            if (admin != null && BCrypt.Net.BCrypt.Verify(loginRequest.Password, admin.Password))
             {
-                return Unauthorized(new { message = "Invalid username or password" }); // Sending error message with 401 status
+                var tokenResponse = await GenerateAndSaveTokens(admin.Id.ToString(), admin, "Admin");
+                var roles = await _adminRepository.GetAdminRoleByUsername(admin.Name);
+
+                return Ok(new
+                {
+                    Token = tokenResponse,
+                    Roles = roles,
+                    Role = "Admin"
+                });
             }
 
-            // Generate tokens and update user
-            var tokenResponse = await GenerateAndSaveTokens(user);
-
-            // Fetch user roles
-            var roles = await _userRepository.GetUserRoleByUsername(user.Name);
-
-            // Include roles in the response
-            var response = new
+            // Check User
+            var user = await _userRepository.GetByUserOrEmail(loginRequest.Name);
+            if (user != null && BCrypt.Net.BCrypt.Verify(loginRequest.Password, user.Password))
             {
-                Token = tokenResponse,
-                Roles = roles
-            };
+                var tokenResponse = await GenerateAndSaveTokens(user.Id.ToString(), user, "User");
+                var roles = await _userRepository.GetUserRoleByUsername(user.Name);
 
-            return Ok(response); // 200 OK
+                return Ok(new
+                {
+                    Token = tokenResponse,
+                    Roles = roles,
+                    Role = "User"
+                });
+            }
+            var client = await _clientRepository.GetByClientOrEmail(loginRequest.Name);
+            if (client != null && BCrypt.Net.BCrypt.Verify(loginRequest.Password, client.Password))
+            {
+                var tokenResponse = await GenerateAndSaveTokens(client.Id.ToString(), client, "Client");
+                var roles = await _clientRepository.GetClientRoleByUsername(client.Name);
+
+                return Ok(new
+                {
+                    Token = tokenResponse,
+                    Roles = roles,
+                    Role = "Client"
+                });
+            }
+
+            // If no valid login
+            return Unauthorized(new { message = "Invalid username or password" });
         }
 
-
-
-
-        private async Task<object> GenerateAndSaveTokens(IUser user)
+        private async Task<object> GenerateAndSaveTokens(string userId, IUser user, string role)
         {
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Name),
-                new Claim(ClaimTypes.Role, user.Role)
-            };
-
-            var accessToken = _tokenService.GenerateAccessToken(claims);
-            var accessTokenExpiryTime = DateTime.UtcNow.AddHours(1); // Assuming 1-hour expiration
+            var accessToken = _tokenService.GenerateAccessToken(userId, user.Name, role);
+            var accessTokenExpiryTime = DateTime.UtcNow.AddHours(1);
 
             var refreshToken = _tokenService.GenerateRefreshToken();
-            var refreshTokenExpiryTime = DateTime.UtcNow.AddDays(7); // Assuming 7-day expiration
+            var refreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
 
-            // Save refresh token in the database (associate it with the user)
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime = refreshTokenExpiryTime;
-            await _userRepository.UpdateUserAsync(user);
 
-            // Return a serializable object with token and expiration details
+            switch (role)
+            {
+                case "Admin":
+                    await _adminRepository.UpdateAdminAsync((Admin)user);
+                    break;
+                case "User":
+                    await _userRepository.UpdateUserAsync((User)user);
+                    break;
+                case "Client":
+                    await _clientRepository.UpdateClientAsync((Client)user);
+                    break;
+            }
+
             return new
             {
                 token = accessToken,
@@ -85,95 +121,183 @@ namespace AttarStore.Api.Controllers
             };
         }
 
+
+
+
         [HttpPost("refresh-token")]
-        public async Task<IActionResult> RefreshToken([FromBody] TokenRequest tokenRequest)
+        public async Task<IActionResult> RefreshToken([FromBody] TokenResponse model)
         {
-            if (string.IsNullOrWhiteSpace(tokenRequest.RefreshToken))
+            var principal = _tokenService.GetPrincipalFromExpiredToken(model.Token);
+            if (principal == null)
+                return BadRequest(new { message = "Invalid access token" });
+
+            var userIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var username = principal.Identity?.Name;
+            var role = principal.FindFirst(ClaimTypes.Role)?.Value;
+
+            if (userIdClaim == null || username == null || role == null)
+                return BadRequest(new { message = "Token is missing required claims" });
+
+            if (!int.TryParse(userIdClaim, out int userId)) // Convert userId from string to int
+                return BadRequest(new { message = "Invalid user ID" });
+
+            IUser user = null;
+
+            if (role == "Admin")
             {
-                return BadRequest("Refresh token is missing or empty.");
+                // Fetch the admin by their user ID
+                user = await _adminRepository.GetAdminById(userId);
+            }
+            else if (role == "User")
+            {
+                // Fetch the user by their user ID
+                user = await _userRepository.GetUserById(userId);
+            }
+            else if (role == "Client")
+            {
+                // Fetch the client by their user ID
+                user = await _clientRepository.GetClientById(userId);
             }
 
-            // Fetch user by the provided refresh token
-            var user = await _userRepository.GetByRefreshToken(tokenRequest.RefreshToken);
-            if (user == null || user.RefreshToken != tokenRequest.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
-            {
-                return Unauthorized("Invalid refresh token.");
-            }
+            // Check if the user exists and the refresh token is valid
+            if (user == null || user.RefreshToken != model.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+                return BadRequest(new { message = "Invalid or expired refresh token" });
 
-            // Generate new access and refresh tokens
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Name),
-                new Claim(ClaimTypes.Role, user.Role)
-            };
-
-            var newAccessToken = _tokenService.GenerateAccessToken(claims);
-            var newAccessTokenExpiryTime = DateTime.UtcNow.AddHours(1); // Assuming 1-hour expiration
-
+            var newAccessToken = _tokenService.GenerateAccessToken(userId.ToString(), username, role); // Pass userId as string for token generation
             var newRefreshToken = _tokenService.GenerateRefreshToken();
-            var newRefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7); // Assuming 7-day expiration
+            var refreshExpiry = DateTime.UtcNow.AddDays(7);
 
-            // Update user's refresh token in the database
             user.RefreshToken = newRefreshToken;
-            user.RefreshTokenExpiryTime = newRefreshTokenExpiryTime;
-            await _userRepository.UpdateUserAsync(user);
+            user.RefreshTokenExpiryTime = refreshExpiry;
 
-            var response = new
+            // Update the appropriate repository based on the role
+            if (role == "Admin")
+                await _adminRepository.UpdateAdminAsync((Admin)user);
+            else if (role == "User")
+                await _userRepository.UpdateUserAsync((User)user);
+            else if (role == "Client")
+                await _clientRepository.UpdateClientAsync((Client)user);
+
+            return Ok(new
             {
                 token = newAccessToken,
-                tokenExpiry = newAccessTokenExpiryTime,
                 refreshToken = newRefreshToken,
-                refreshTokenExpiry = newRefreshTokenExpiryTime
-            };
-
-            return Ok(response);
+                refreshTokenExpiry = refreshExpiry
+            });
         }
+
+
+
+
 
 
         [HttpPost("request-password-reset")]
         public async Task<IActionResult> RequestPasswordReset([FromBody] PasswordResetRequestDto model)
         {
-            // Check if the email exists in the system
+            // Check for Admin
+            var admin = await _adminRepository.GetByAdminEmail(model.Email);
+            if (admin != null)
+            {
+                var token = await _adminRepository.GeneratePasswordResetTokenAsync(model.Email);
+                if (string.IsNullOrEmpty(token))
+                    return BadRequest(new { message = "Error generating reset token." });
+
+                var resetLink = $"{AppConstants.PasswordResetBaseUrl}?token={token}&email={model.Email}";
+
+                try
+                {
+                    await _emailSender.SendEmailAsync(model.Email, "Password Reset", $"Click here to reset your password: {resetLink}");
+                }
+                catch
+                {
+                    return StatusCode(500, new { message = "An error occurred while sending the email." });
+                }
+
+                return Ok(new { message = "Password reset link sent for Admin." });
+            }
+
+            // Check for Client
+            var client = await _clientRepository.GetByClientEmail(model.Email);
+            if (client != null)
+            {
+                var token = await _clientRepository.GeneratePasswordResetTokenAsync(model.Email);
+                if (string.IsNullOrEmpty(token))
+                    return BadRequest(new { message = "Error generating reset token." });
+
+                var resetLink = $"{AppConstants.PasswordResetBaseUrl}?token={token}&email={model.Email}";
+
+                try
+                {
+                    await _emailSender.SendEmailAsync(model.Email, "Password Reset", $"Click here to reset your password: {resetLink}");
+                }
+                catch
+                {
+                    return StatusCode(500, new { message = "An error occurred while sending the email." });
+                }
+
+                return Ok(new { message = "Password reset link sent for Client." });
+            }
+
+            // Check for User
             var user = await _userRepository.GetByUserEmail(model.Email);
             if (user == null)
-                return BadRequest(new { message = "Invalid email address." }); // Return JSON with message.
+                return BadRequest(new { message = "Invalid email address." });
 
-            // Generate a password reset token
-            var token = await _userRepository.GeneratePasswordResetTokenAsync(model.Email);
-            if (string.IsNullOrEmpty(token))
-                return BadRequest(new { message = "Error generating reset token." }); // Return JSON with message.
+            var userToken = await _userRepository.GeneratePasswordResetTokenAsync(model.Email);
+            if (string.IsNullOrEmpty(userToken))
+                return BadRequest(new { message = "Error generating reset token." });
 
-            // Generate the reset link, including the token and email
-            var resetLink = $"{AppConstants.PasswordResetBaseUrl}?token={token}&email={model.Email}";
+            var userResetLink = $"{AppConstants.PasswordResetBaseUrl}?token={userToken}&email={model.Email}";
 
-
-
-            // Send the reset link via email
             try
             {
-                await _emailSender.SendEmailAsync(model.Email, "Password Reset", $"Click here to reset your password: {resetLink}");
+                await _emailSender.SendEmailAsync(model.Email, "Password Reset", $"Click here to reset your password: {userResetLink}");
             }
-            catch (Exception ex)
+            catch
             {
-                // Log the error here and return a generic error message
-                return StatusCode(500, new { message = "An error occurred while sending the email." }); // Return JSON with message.
+                return StatusCode(500, new { message = "An error occurred while sending the email." });
             }
 
-            return Ok(new { message = "Password reset link sent." }); // Return JSON with success message.
+            return Ok(new { message = "Password reset link sent for User." });
         }
 
-
-        // Reset Password
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto model)
         {
-            bool isReset = await _userRepository.ResetPasswordAsync(model.Email, model.Token, model.NewPassword);
-            if (!isReset)
-                return BadRequest(new { message = "Invalid or expired token" }); // Return JSON with message.
+            // Check for Admin
+            var admin = await _adminRepository.GetByAdminEmail(model.Email);
+            if (admin != null)
+            {
+                bool isReset = await _adminRepository.ResetPasswordAsync(model.Email, model.Token, model.NewPassword);
+                if (!isReset)
+                    return BadRequest(new { message = "Invalid or expired token" });
 
-            return Ok(new { message = "Password reset successful." }); // Return JSON with success message.
+                return Ok(new { message = "Password reset successful for Admin." });
+            }
+
+            // Check for Client
+            var client = await _clientRepository.GetByClientEmail(model.Email);
+            if (client != null)
+            {
+                bool isReset = await _clientRepository.ResetPasswordAsync(model.Email, model.Token, model.NewPassword);
+                if (!isReset)
+                    return BadRequest(new { message = "Invalid or expired token" });
+
+                return Ok(new { message = "Password reset successful for Client." });
+            }
+
+            // Check for User
+            var user = await _userRepository.GetByUserEmail(model.Email);
+            if (user == null)
+                return BadRequest(new { message = "Invalid email address." });
+
+            bool isUserReset = await _userRepository.ResetPasswordAsync(model.Email, model.Token, model.NewPassword);
+            if (!isUserReset)
+                return BadRequest(new { message = "Invalid or expired token" });
+
+            return Ok(new { message = "Password reset successful for User." });
         }
+
 
     }
 }

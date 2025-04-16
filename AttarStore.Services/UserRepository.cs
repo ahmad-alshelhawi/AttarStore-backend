@@ -18,8 +18,11 @@ namespace AttarStore.Services
         }
 
         // ✅ Check if Name or Email Exists Across Both Users and Admins
-        public async Task<bool> ExistsByNameOrEmailAsync(string name, string email, int? excludeUserId = null, int? excludeAdminId = null)
+        public async Task<bool> ExistsByNameOrEmailAsync(string name, string email, int? excludeUserId = null, int? excludeAdminId = null, int? excludeClientId = null)
         {
+            bool clientExists = await _dbContext.Clients
+               .AnyAsync(u => (u.Name == name || u.Email == email) && (!excludeClientId.HasValue || u.Id != excludeClientId.Value));
+
             bool userExists = await _dbContext.Users
                 .AnyAsync(u => (u.Name == name || u.Email == email) && !u.IsDeleted && (!excludeUserId.HasValue || u.Id != excludeUserId.Value));
 
@@ -142,7 +145,9 @@ namespace AttarStore.Services
         public async Task<bool> EmailExists(string email)
         {
             return await _dbContext.Users.AnyAsync(u => u.Email == email && !u.IsDeleted)
-                || await _dbContext.Admins.AnyAsync(a => a.Email == email && !a.IsDeleted);
+                || await _dbContext.Admins.AnyAsync(a => a.Email == email && !a.IsDeleted)
+                || await _dbContext.Clients.AnyAsync(a => a.Email == email);
+
         }
 
         // NEW: Update admin profile (excluding password unless changed)
@@ -157,7 +162,9 @@ namespace AttarStore.Services
             if (!string.IsNullOrWhiteSpace(name) && name != user.Name)
             {
                 bool nameExists = await _dbContext.Admins.AnyAsync(a => a.Id != userId && a.Name == name && !a.IsDeleted) ||
-                                  await _dbContext.Users.AnyAsync(u => u.Name == name && !u.IsDeleted);
+                                  await _dbContext.Users.AnyAsync(u => u.Name == name && !u.IsDeleted) ||
+                                  await _dbContext.Clients.AnyAsync(u => u.Name == name);
+
 
                 if (nameExists)
                     return "Name already exists in the system.";
@@ -170,7 +177,9 @@ namespace AttarStore.Services
             if (!string.IsNullOrWhiteSpace(email) && email != user.Email)
             {
                 bool emailExists = await _dbContext.Admins.AnyAsync(a => a.Id != userId && a.Email == email && !a.IsDeleted) ||
-                                   await _dbContext.Users.AnyAsync(u => u.Email == email && !u.IsDeleted);
+                                   await _dbContext.Users.AnyAsync(u => u.Email == email && !u.IsDeleted) ||
+                                   await _dbContext.Clients.AnyAsync(u => u.Email == email);
+
 
                 if (emailExists)
                     return "Email already exists in the system.";

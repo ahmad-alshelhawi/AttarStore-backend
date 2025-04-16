@@ -45,7 +45,13 @@ namespace AttarStore.Services
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
+            modelBuilder.Entity<Client>()
+               .HasIndex(u => u.Name)
+               .IsUnique();
 
+            modelBuilder.Entity<Client>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
 
 
 

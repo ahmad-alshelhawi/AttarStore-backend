@@ -34,6 +34,7 @@ namespace AttarStore.Models
     // A simplified view of the category for displaying purposes
     public class CategoryMapperView
     {
+        public int Id { get; set; }
         public string Name { get; set; }
     }
 

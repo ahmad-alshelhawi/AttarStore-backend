@@ -19,9 +19,12 @@ namespace AttarStore.Api.Controllers
         private readonly IAdminRepository _adminRepository;
         private readonly IMapper _mapper;
         private readonly IPermissionRepository _permissionRepo;
+        private readonly IClientRepository _clientRepository;
 
-        public UserController(IUserRepository userRepository, IMapper mapper, IPermissionRepository permissionRepository, IAdminRepository adminRepository)
+
+        public UserController(IUserRepository userRepository, IMapper mapper, IPermissionRepository permissionRepository, IAdminRepository adminRepository, IClientRepository clientRepository)
         {
+            _clientRepository = clientRepository;
             _userRepository = userRepository;
             _adminRepository = adminRepository;
             _mapper = mapper;
@@ -36,37 +39,35 @@ namespace AttarStore.Api.Controllers
         }
 
 
-        [Authorize(Roles = "Master,Admin")]
+        //[Authorize(Roles = "Master,Admin")]
         [HttpPost("AddNewUser")]
         public async Task<IActionResult> CreateUser(UserMapperCreate userCreate)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
+            // Check name uniqueness
+            var adminWithSameName = await _adminRepository.GetByAdmin(userCreate.Name);
+            var userWithSameName = await _userRepository.GetByUser(userCreate.Name);
+            var clientWithSameName = await _clientRepository.GetByClient(userCreate.Name);
+            if (adminWithSameName != null || userWithSameName != null || clientWithSameName != null)
+                return Conflict(new { status = "Name already exists in the system" });
 
-                // Check if the email already exists
-                if (await _userRepository.EmailExists(userCreate.Email))
-                {
-                    return Conflict(new { status = "Email already exists" });
-                }
+            // Check email uniqueness
+            var adminWithSameEmail = await _adminRepository.GetByAdminEmail(userCreate.Email);
+            var userWithSameEmail = await _userRepository.GetByUserOrEmail(userCreate.Email);
+            var clientWithSameEmail = await _clientRepository.GetByClientOrEmail(userCreate.Email);
+            if (adminWithSameEmail != null || userWithSameEmail != null || clientWithSameEmail != null)
+                return Conflict(new { status = "Email already exists in the system" });
 
-                var user = _mapper.Map<User>(userCreate);
-                user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
-                await _userRepository.AddUser(user);
+            var user = _mapper.Map<User>(userCreate);
+            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
+            await _userRepository.AddUser(user);
 
-                return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, _mapper.Map<UserMapperCreate>(user));
-            }
+            return StatusCode(201, _mapper.Map<UserMapperView>(user));
 
-            catch (Exception ex)
-            {
-                var errorMessage = ex.InnerException?.Message ?? ex.Message;
-                return StatusCode(500, errorMessage);
-            }
         }
+
+
 
 
         [HttpGet("GetUserBy/")]
@@ -81,40 +82,45 @@ namespace AttarStore.Api.Controllers
             return Ok(userDto);
         }
 
-        [HttpPut("UpdateUser/")]
-        public async Task<IActionResult> Update([FromQuery] int id, UserMapperUpdate userIn)
+
+        [HttpPut("UpdateUser/{id}")]
+        public async Task<IActionResult> UpdateUser(int id, UserMapperUpdate userUpdate)
         {
-            try
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var existingUser = await _userRepository.GetUserById(id);
+            if (existingUser == null)
+                return NotFound(new { status = "User not found" });
+
+            // Check name uniqueness
+            if (!string.IsNullOrWhiteSpace(userUpdate.Name) && userUpdate.Name != existingUser.Name)
             {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
+                var userWithSameName = await _userRepository.GetByUser(userUpdate.Name);
+                var adminWithSameName = await _adminRepository.GetByAdmin(userUpdate.Name);
+                var clientWithSameName = await _clientRepository.GetByClient(userUpdate.Name);
 
-                var existingUser = await _userRepository.GetUserById(id);
-                if (existingUser == null)
-                {
-                    return NotFound(new { status = "User not found" });
-                }
-
-                // Check if the new email is already taken by another user
-                if (await _userRepository.EmailExists(userIn.Name) && existingUser.Name != userIn.Name)
-                {
-                    return Conflict(new { status = "Email already exists" });
-                }
-
-                // Update the existing user with the new values
-                _mapper.Map(userIn, existingUser);
-
-                await _userRepository.UpdateUserAsync(existingUser);
-                return Ok(_mapper.Map<UserMapperUpdate>(existingUser));
+                if ((userWithSameName != null && userWithSameName.Id != id) || adminWithSameName != null || clientWithSameName != null)
+                    return Conflict(new { status = "Name already exists in the system" });
             }
-            catch (Exception ex)
+
+            // Check email uniqueness
+            if (!string.IsNullOrWhiteSpace(userUpdate.Email) && userUpdate.Email != existingUser.Email)
             {
-                var errorMessage = ex.InnerException?.Message ?? ex.Message;
-                return StatusCode(500, errorMessage);
+                var userWithSameEmail = await _userRepository.GetByUserOrEmail(userUpdate.Email);
+                var adminWithSameEmail = await _adminRepository.GetByAdminEmail(userUpdate.Email);
+                var clientWithSameEmail = await _clientRepository.GetByClientOrEmail(userUpdate.Email);
+
+                if ((userWithSameEmail != null && userWithSameEmail.Id != id) || adminWithSameEmail != null || clientWithSameEmail != null)
+                    return Conflict(new { status = "Email already exists in the system" });
             }
+
+            _mapper.Map(userUpdate, existingUser);
+            await _userRepository.UpdateUserAsync(existingUser);
+
+            return Ok(_mapper.Map<UserMapperView>(existingUser));
         }
+
+
 
         [HttpDelete("DeleteUser/")]
         public async Task<IActionResult> DeleteUserAsync([FromQuery] int id)
@@ -142,28 +148,40 @@ namespace AttarStore.Api.Controllers
 
         // Fetch profile of the currently logged-in admin
         [HttpGet("GetProfile")]
+        [Authorize(Roles = "User")]
         public async Task<IActionResult> GetProfile()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
-                return Unauthorized(new { status = "Invalid token or missing user identifier" });
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
 
+            if (userIdClaim == null)
+                return Unauthorized(new { message = "Invalid token: user ID missing." });
+
+            var userId = int.Parse(userIdClaim.Value);
             var user = await _userRepository.GetUserById(userId);
-            if (user == null) return NotFound(new { status = "User profile not found" });
 
-            return Ok(_mapper.Map<UserMapperView>(user));
+            if (user == null)
+                return NotFound(new { message = "User profile not found." });
+
+            return Ok(new
+            {
+                user.Name,
+                user.Email,
+                user.Phone,
+                user.Address,
+                // Add any other fields you want to expose
+            });
         }
 
         // Update profile for the currently logged-in admin
         [HttpPut("UpdateProfile")]
         public async Task<IActionResult> UpdateProfile(UserProfileUpdateMapper userUpdate)
         {
-            // Get the current user's ID from the token
+            // Get the current admin's ID from the token
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
                 return Unauthorized(new { status = "Invalid token or missing user identifier" });
 
-            // Get the existing user profile
+            // Get the existing admin profile
             var existingUser = await _userRepository.GetUserById(userId);
             if (existingUser == null)
                 return NotFound(new { status = "User profile not found" });
@@ -175,8 +193,10 @@ namespace AttarStore.Api.Controllers
             {
                 var adminWithSameName = await _adminRepository.GetByAdmin(userUpdate.Name);
                 var userWithSameName = await _userRepository.GetByUser(userUpdate.Name);
+                var clientWithSameName = await _clientRepository.GetByClient(userUpdate.Name);
 
-                if ((adminWithSameName != null && adminWithSameName.Id != userId) || userWithSameName != null)
+
+                if ((userWithSameName != null && userWithSameName.Id != userId) || adminWithSameName != null || clientWithSameName != null)
                 {
                     return Conflict(new { status = "Name already exists in the system." });
                 }
@@ -190,8 +210,10 @@ namespace AttarStore.Api.Controllers
             {
                 var adminWithSameEmail = await _adminRepository.GetByAdminEmail(userUpdate.Email);
                 var userWithSameEmail = await _userRepository.GetByUserOrEmail(userUpdate.Email);
+                var clientWithSameEmail = await _clientRepository.GetByClientOrEmail(userUpdate.Email);
 
-                if ((adminWithSameEmail != null && adminWithSameEmail.Id != userId) || userWithSameEmail != null)
+
+                if ((userWithSameEmail != null && userWithSameEmail.Id != userId) || adminWithSameEmail != null || clientWithSameEmail != null)
                 {
                     return Conflict(new { status = "Email already exists in the system." });
                 }
@@ -226,9 +248,8 @@ namespace AttarStore.Api.Controllers
 
 
 
-
         [HttpPost("ChangePassword")]
-        public async Task<IActionResult> ChangePassword(ChangePasswordAdmin changePassword)
+        public async Task<IActionResult> ChangePassword(ChangePasswordUser changePassword)
         {
             // Validate input
             if (string.IsNullOrEmpty(changePassword.CurrentPassword) || string.IsNullOrEmpty(changePassword.NewPassword))
@@ -253,53 +274,55 @@ namespace AttarStore.Api.Controllers
 
             return Ok(new { status = "Password changed successfully" });
         }
+    }
+}
 
-        /* [HttpDelete("DeleteUser/{id:int}")]
-         public async Task<IActionResult> Delete(int id)
+
+/* [HttpDelete("DeleteUser/{id:int}")]
+ public async Task<IActionResult> Delete(int id)
+ {
+     try
+     {
+         var user = await _userRepository.GetUserById(id);
+         if (user == null)
          {
-             try
-             {
-                 var user = await _userRepository.GetUserById(id);
-                 if (user == null)
-                 {
-                     return NotFound(new { status = "User not found" });
-                 }
+             return NotFound(new { status = "User not found" });
+         }
 
-                 // Set the IsDeleted flag to true
-                 user.IsDeleted = true;
+         // Set the IsDeleted flag to true
+         user.IsDeleted = true;
 
-                 await _userRepository.UpdateUserAsync(user);
-                 return NoContent(); // 204 No Content response indicates success without returning data
-             }
-             catch (Exception ex)
-             {
-                 var errorMessage = ex.InnerException?.Message ?? ex.Message;
-                 return StatusCode(500, errorMessage);
-             */
+         await _userRepository.UpdateUserAsync(user);
+         return NoContent(); // 204 No Content response indicates success without returning data
+     }
+     catch (Exception ex)
+     {
+         var errorMessage = ex.InnerException?.Message ?? ex.Message;
+         return StatusCode(500, errorMessage);
+     */
+
+
+/*
+
+[HttpPost("add-image")]
+public async Task<IActionResult> AddImage(IFormFile file)
+{
+    if (file == null || file.Length == 0)
+    {
+        return BadRequest("Invalid file.");
     }
 
-    /*
+    var fileName = Path.GetFileName(file.FileName);
+    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", fileName);
 
-    [HttpPost("add-image")]
-    public async Task<IActionResult> AddImage(IFormFile file)
+    // Create the directory if it doesn't exist
+    Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+
+    using (var stream = new FileStream(filePath, FileMode.Create))
     {
-        if (file == null || file.Length == 0)
-        {
-            return BadRequest("Invalid file.");
-        }
+        await file.CopyToAsync(stream);
+    }
 
-        var fileName = Path.GetFileName(file.FileName);
-        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", fileName);
+    return Ok(new { filePath });
+}*/
 
-        // Create the directory if it doesn't exist
-        Directory.CreateDirectory(Path.GetDirectoryName(filePath));
-
-        using (var stream = new FileStream(filePath, FileMode.Create))
-        {
-            await file.CopyToAsync(stream);
-        }
-
-        return Ok(new { filePath });
-    }*/
-
-}

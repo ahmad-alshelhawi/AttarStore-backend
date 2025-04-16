@@ -1,4 +1,5 @@
 ﻿using AttarStore.Entities;
+using AttarStore.Entities.submodels;
 
 namespace AttarStore.Services
 {
@@ -15,5 +16,8 @@ namespace AttarStore.Services
         Task<Admin> GetByAdminEmail(string email);
         Task<string> UpdateAdminProfileAsync(int adminId, string name, string phoneNumber, string email);
         Task<bool> UpdateAdminPasswordAsync(int adminId, string currentPassword, string newPassword);
+        Task<IUser> GetByUserOrEmail(string input);
+        Task<string> GeneratePasswordResetTokenAsync(string email);
+        Task<bool> ResetPasswordAsync(string email, string token, string newPassword);
     }
 }
