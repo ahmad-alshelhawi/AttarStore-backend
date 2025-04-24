@@ -135,7 +135,7 @@ namespace AttarStore.Api.Controllers
                 if (client == null)
                     return NotFound(new { status = "Client not found" });
 
-                await _clientRepository.DeleteClientAsync(client.Id);
+                await _clientRepository.DeleteClientAsync(client);
                 return NoContent();
             }
             catch (Exception ex)
@@ -145,31 +145,31 @@ namespace AttarStore.Api.Controllers
             }
         }
 
-        // Fetch profile of the currently logged-in admin
-        [HttpGet("GetProfile")]
-        //[Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetProfile()
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        //// Fetch profile of the currently logged-in admin
+        //[HttpGet("GetProfile")]
+        ////[Authorize(Roles = "Admin")]
+        //public async Task<IActionResult> GetProfile()
+        //{
+        //    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
 
-            if (userIdClaim == null)
-                return Unauthorized(new { message = "Invalid token: user ID missing." });
+        //    if (userIdClaim == null)
+        //        return Unauthorized(new { message = "Invalid token: user ID missing." });
 
-            var clientId = int.Parse(userIdClaim.Value);
-            var client = await _clientRepository.GetClientById(clientId);
+        //    var clientId = int.Parse(userIdClaim.Value);
+        //    var client = await _clientRepository.GetClientById(clientId);
 
-            if (client == null)
-                return NotFound(new { message = "User profile not found." });
+        //    if (client == null)
+        //        return NotFound(new { message = "User profile not found." });
 
-            return Ok(new
-            {
-                client.Name,
-                client.Email,
-                client.Phone,
-                client.Address,
-                // Add any other fields you want to expose
-            });
-        }
+        //    return Ok(new
+        //    {
+        //        client.Name,
+        //        client.Email,
+        //        client.Phone,
+        //        client.Address,
+        //        // Add any other fields you want to expose
+        //    });
+        //}
 
         // Update profile for the currently logged-in admin
         [HttpPut("UpdateProfile")]

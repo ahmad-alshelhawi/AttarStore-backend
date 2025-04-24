@@ -109,35 +109,35 @@ namespace AttarStore.Api.Controllers
             var admin = await _adminRepository.GetAdminById(id);
             if (admin == null) return NotFound(new { status = "Admin not found" });
 
-            await _adminRepository.DeleteAdminAsync(admin.Id);
+            await _adminRepository.DeleteAdminAsync(admin);
             return NoContent();
         }
 
-        // Fetch profile of the currently logged-in admin
-        [HttpGet("GetProfile")]
-        //[Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetProfile()
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        //// Fetch profile of the currently logged-in admin
+        //[HttpGet("GetProfile")]
+        ////[Authorize(Roles = "Admin")]
+        //public async Task<IActionResult> GetProfile()
+        //{
+        //    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
 
-            if (userIdClaim == null)
-                return Unauthorized(new { message = "Invalid token: user ID missing." });
+        //    if (userIdClaim == null)
+        //        return Unauthorized(new { message = "Invalid token: user ID missing." });
 
-            var adminId = int.Parse(userIdClaim.Value);
-            var admin = await _adminRepository.GetAdminById(adminId);
+        //    var adminId = int.Parse(userIdClaim.Value);
+        //    var admin = await _adminRepository.GetAdminById(adminId);
 
-            if (admin == null)
-                return NotFound(new { message = "Admin profile not found." });
+        //    if (admin == null)
+        //        return NotFound(new { message = "Admin profile not found." });
 
-            return Ok(new
-            {
-                admin.Name,
-                admin.Email,
-                admin.Phone,
-                admin.Address,
-                // Add any other fields you want to expose
-            });
-        }
+        //    return Ok(new
+        //    {
+        //        admin.Name,
+        //        admin.Email,
+        //        admin.Phone,
+        //        admin.Address,
+        //        // Add any other fields you want to expose
+        //    });
+        //}
 
         // Update profile for the currently logged-in admin
         [HttpPut("UpdateProfile")]

@@ -17,7 +17,7 @@ namespace AttarStore.Services
         Task<Client> GetClientById(int id);
         Task<Client> GetClientByIdToUpdate(int id);
         Task UpdateClientAsync(IUser client);
-        Task DeleteClientAsync(int id);
+        Task DeleteClientAsync(Client client);
         Task<bool> SaveChangesAsync();
         Task<bool> EmailExists(string email);
         Task<string> UpdateUserProfileAsync(int clientId, string name, string phoneNumber, string email);

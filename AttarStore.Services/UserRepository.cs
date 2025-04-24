@@ -106,8 +106,8 @@ namespace AttarStore.Services
         public async Task<User> GetUserById(int id)
         {
             return await _dbContext.Users
-                .Where(u => u.Id == id && !u.IsDeleted)
-                .FirstOrDefaultAsync();
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
         }
 
         // ✅ Get User by ID (for Updates)
@@ -124,15 +124,13 @@ namespace AttarStore.Services
         }
 
         // ✅ Soft Delete a User
-        public async Task DeleteUserAsync(int id)
+        public async Task DeleteUserAsync(User user)
         {
-            var userToDelete = await _dbContext.Users.FindAsync(id);
-            if (userToDelete != null)
-            {
-                _dbContext.Users.Remove(userToDelete); // Hard delete
-                await _dbContext.SaveChangesAsync();
-            }
+            _dbContext.Users.Remove(user);
+            await _dbContext.SaveChangesAsync();
+
         }
+
 
 
         // ✅ Save Changes to Database

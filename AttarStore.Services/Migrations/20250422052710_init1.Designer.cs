@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AttarStore.Services.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250415105909_init2")]
-    partial class init2
+    [Migration("20250422052710_init1")]
+    partial class init1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -124,13 +124,13 @@ namespace AttarStore.Services.Migrations
                         {
                             Id = 1,
                             Address = "",
-                            Created_at = new DateTimeOffset(new DateTime(2025, 4, 15, 14, 59, 8, 470, DateTimeKind.Unspecified).AddTicks(3439), new TimeSpan(0, 4, 0, 0, 0)),
+                            Created_at = new DateTimeOffset(new DateTime(2025, 4, 22, 9, 27, 10, 413, DateTimeKind.Unspecified).AddTicks(2653), new TimeSpan(0, 4, 0, 0, 0)),
                             Email = "admin@gmail.com",
                             IsDeleted = false,
                             Name = "admin",
-                            Password = "$2a$11$j7bdhROnxKabdHmC9w8RaOsUDZK1hdlVhXmkSWs7By6u6RPObgGGe",
+                            Password = "$2a$11$f2fpCdeTZWDtE.3olYNq1eFWi49LXhdjXRQDWuEvoNhevejmjwBsu",
                             Phone = "096654467",
-                            RefreshTokenExpiryTime = new DateTime(2025, 4, 15, 11, 0, 8, 470, DateTimeKind.Utc).AddTicks(3150),
+                            RefreshTokenExpiryTime = new DateTime(2025, 4, 22, 5, 28, 10, 413, DateTimeKind.Utc).AddTicks(2523),
                             Role = "Master"
                         });
                 });
@@ -261,7 +261,7 @@ namespace AttarStore.Services.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("CartId")
+                    b.Property<int?>("CartId")
                         .HasColumnType("int");
 
                     b.Property<DateTimeOffset>("Created_at")
@@ -269,11 +269,11 @@ namespace AttarStore.Services.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Password")
                         .IsRequired()
@@ -302,6 +302,12 @@ namespace AttarStore.Services.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CartId");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("Name")
+                        .IsUnique();
 
                     b.ToTable("Clients");
                 });
@@ -549,14 +555,15 @@ namespace AttarStore.Services.Migrations
                     b.Property<int?>("ClientId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("ExpiryDate")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsRevoked")
                         .HasColumnType("bit");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Token")
                         .IsRequired()
@@ -566,12 +573,6 @@ namespace AttarStore.Services.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AdminId");
-
-                    b.HasIndex("ClientId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("RefreshTokens");
                 });
@@ -706,9 +707,7 @@ namespace AttarStore.Services.Migrations
                 {
                     b.HasOne("AttarStore.Entities.Cart", "Cart")
                         .WithMany()
-                        .HasForeignKey("CartId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("CartId");
 
                     b.Navigation("Cart");
                 });
@@ -806,27 +805,6 @@ namespace AttarStore.Services.Migrations
                     b.Navigation("Category");
 
                     b.Navigation("Manufacturer");
-                });
-
-            modelBuilder.Entity("AttarStore.Entities.RefreshToken", b =>
-                {
-                    b.HasOne("AttarStore.Entities.Admin", "Admin")
-                        .WithMany()
-                        .HasForeignKey("AdminId");
-
-                    b.HasOne("AttarStore.Entities.Client", "Client")
-                        .WithMany()
-                        .HasForeignKey("ClientId");
-
-                    b.HasOne("AttarStore.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId");
-
-                    b.Navigation("Admin");
-
-                    b.Navigation("Client");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("AttarStore.Entities.Cart", b =>

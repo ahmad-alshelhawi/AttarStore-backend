@@ -21,7 +21,6 @@ namespace AttarStore.Models
         public string Phone { get; set; }
         public string Role { get; set; }
         public string Address { get; set; } = "";
-        public int DepartmentId { get; set; }
         public bool IsDeleted { get; set; } = false;
 
     }

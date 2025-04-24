@@ -50,8 +50,8 @@ namespace AttarStore.Services
         public async Task<Admin> GetAdminById(int id)
         {
             return await _dbContext.Admins
-                .Where(a => a.Id == id && !a.IsDeleted)
-                .FirstOrDefaultAsync();
+               .AsNoTracking()
+               .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
         }
 
         public async Task AddAdmin(Admin admin)
@@ -121,14 +121,11 @@ namespace AttarStore.Services
             return await _dbContext.Admins.AnyAsync(u => u.Email == email);
         }
 
-        public async Task DeleteAdminAsync(int id)
+        public async Task DeleteAdminAsync(Admin admin)
         {
-            var admin = await _dbContext.Admins.FindAsync(id);
-            if (admin != null)
-            {
-                admin.IsDeleted = true; // Soft delete
-                await _dbContext.SaveChangesAsync();
-            }
+            admin.IsDeleted = true;
+            _dbContext.Admins.Update(admin);
+            await _dbContext.SaveChangesAsync();
         }
 
         // NEW: Update admin profile (excluding password unless changed)
@@ -236,5 +233,7 @@ namespace AttarStore.Services
 
             return true;
         }
+
+
     }
 }

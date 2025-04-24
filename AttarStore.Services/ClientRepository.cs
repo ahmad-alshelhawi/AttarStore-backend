@@ -101,7 +101,8 @@ namespace AttarStore.Services
         public async Task<Client> GetClientById(int id)
         {
             return await _dbContext.Clients
-                .FirstOrDefaultAsync(c => c.Id == id);
+               .AsNoTracking()
+               .FirstOrDefaultAsync(u => u.Id == id);
         }
 
         // ✅ Get Client by ID (for updates)
@@ -118,14 +119,11 @@ namespace AttarStore.Services
         }
 
         // ✅ Soft Delete Client
-        public async Task DeleteClientAsync(int id)
+        public async Task DeleteClientAsync(Client client)
         {
-            var clientToDelete = await _dbContext.Clients.FindAsync(id);
-            if (clientToDelete != null)
-            {
-                _dbContext.Entry(clientToDelete).State = EntityState.Modified;
-                await _dbContext.SaveChangesAsync();
-            }
+            _dbContext.Clients.Remove(client);
+            await _dbContext.SaveChangesAsync();
+
         }
 
         // ✅ Save Changes to Database

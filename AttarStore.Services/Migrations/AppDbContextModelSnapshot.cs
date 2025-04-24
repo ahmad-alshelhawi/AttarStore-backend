@@ -121,13 +121,13 @@ namespace AttarStore.Services.Migrations
                         {
                             Id = 1,
                             Address = "",
-                            Created_at = new DateTimeOffset(new DateTime(2025, 4, 15, 15, 2, 11, 236, DateTimeKind.Unspecified).AddTicks(8545), new TimeSpan(0, 4, 0, 0, 0)),
+                            Created_at = new DateTimeOffset(new DateTime(2025, 4, 22, 9, 29, 29, 325, DateTimeKind.Unspecified).AddTicks(5986), new TimeSpan(0, 4, 0, 0, 0)),
                             Email = "admin@gmail.com",
                             IsDeleted = false,
                             Name = "admin",
-                            Password = "$2a$11$bFAs.pk3FPRjhdHPe5GZqeEIJye.3dcQKYJsWe8TqVlxOuC8.wk6O",
+                            Password = "$2a$11$R3pA53HbqIzFwVSbUHcAQ.0I.J97vp4oh5j3//mGuyFml90fX8uDO",
                             Phone = "096654467",
-                            RefreshTokenExpiryTime = new DateTime(2025, 4, 15, 11, 3, 11, 236, DateTimeKind.Utc).AddTicks(8209),
+                            RefreshTokenExpiryTime = new DateTime(2025, 4, 22, 5, 30, 29, 325, DateTimeKind.Utc).AddTicks(5874),
                             Role = "Master"
                         });
                 });
@@ -266,11 +266,11 @@ namespace AttarStore.Services.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Password")
                         .IsRequired()
@@ -299,6 +299,12 @@ namespace AttarStore.Services.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CartId");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("Name")
+                        .IsUnique();
 
                     b.ToTable("Clients");
                 });
@@ -546,14 +552,15 @@ namespace AttarStore.Services.Migrations
                     b.Property<int?>("ClientId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("ExpiryDate")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsRevoked")
                         .HasColumnType("bit");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Token")
                         .IsRequired()
@@ -563,12 +570,6 @@ namespace AttarStore.Services.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AdminId");
-
-                    b.HasIndex("ClientId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("RefreshTokens");
                 });
@@ -801,27 +802,6 @@ namespace AttarStore.Services.Migrations
                     b.Navigation("Category");
 
                     b.Navigation("Manufacturer");
-                });
-
-            modelBuilder.Entity("AttarStore.Entities.RefreshToken", b =>
-                {
-                    b.HasOne("AttarStore.Entities.Admin", "Admin")
-                        .WithMany()
-                        .HasForeignKey("AdminId");
-
-                    b.HasOne("AttarStore.Entities.Client", "Client")
-                        .WithMany()
-                        .HasForeignKey("ClientId");
-
-                    b.HasOne("AttarStore.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId");
-
-                    b.Navigation("Admin");
-
-                    b.Navigation("Client");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("AttarStore.Entities.Cart", b =>

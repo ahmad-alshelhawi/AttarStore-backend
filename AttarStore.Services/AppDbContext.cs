@@ -56,8 +56,8 @@ namespace AttarStore.Services
 
 
             // Initialize the TokenService or use a static method to generate the refresh token
-            var tokenService = new TokenService(null); // Pass null or a valid IConfiguration if required
-
+          /*  var tokenService = new TokenService(null); // Pass null or a valid IConfiguration if required
+*/
 
             var adminPassword = BCrypt.Net.BCrypt.HashPassword("password");
             string refreshToken = null;
